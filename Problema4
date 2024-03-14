@@ -14,7 +14,7 @@ T2 = 10
 T3 = 15
 T4 = 20
 T5 = 0               # calor emitido/sugado por uma fonte
-q = 100
+q = 0
  
  
 x = y = np.linspace(dx/2, L-dx/2, n)     #espaço a ser estudado no eixo x e y
