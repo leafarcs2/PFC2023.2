@@ -1,0 +1,239 @@
+import numpy as np 
+import matplotlib.pyplot as plt 
+
+ 
+E = 0.0012
+L = 0.01
+Lporta = (L - 5*E)/4
+n = 100                        #número de nós
+dx = L/n                       #variação de comprimento
+kcob = 401                     #condutividade térmica do cobre
+ksil = 148
+T1 = 5
+T2 = 10
+T3 = 15
+T4 = 20
+T5 = 0               # calor emitido/sugado por uma fonte
+q = 100
+ 
+ 
+x = y = np.linspace(dx/2, L-dx/2, n)     #espaço a ser estudado no eixo x e y
+ 
+Q = q/n                                           #quantidade de calor nodal 
+
+
+K = np.ones((n,n), dtype=float)
+T = np.arange(n*n).reshape((n,n))           #matriz inicial da temperatura
+A = np.zeros((n*n,n*n), dtype=float)         #matriz inicial A 
+B = np.zeros((n*n,1), dtype=float)            #matriz inicial B 
+
+
+#incremento das portas
+        
+def portas(x, y, E, L, Lporta, ksil, kcob):
+    
+    if (E <= x <= E + Lporta) and (0 <= y <= Lporta):
+        return kcob
+    elif (2*E + Lporta <= x <= 2*E + 2*Lporta) and (0 <= y <= Lporta):
+        return kcob
+    elif (3*E + 2*Lporta <= x <= 3*E + 3*Lporta) and (0 <= y <= Lporta):
+        return kcob
+    elif (4*E + 3*Lporta <= x <= 4*E + 4*Lporta) and (0 <= y <= Lporta):
+        return kcob
+    elif (0 <= x <= Lporta) and (E <= y <= E + Lporta):
+        return kcob
+    elif (L - Lporta <= x <= L) and (E <= y <= E + Lporta):
+        return kcob
+    elif (0 <= x <= Lporta) and (2*E + Lporta <= y <= 2*E + 2*Lporta):
+        return kcob
+    elif (L - Lporta <= x <= L) and (2*E + Lporta <= y <= 2*E + 2*Lporta):
+        return kcob
+    elif (0 <= x <= Lporta) and (3*E + 2*Lporta <= y <= 3*E + 3*Lporta):
+        return kcob
+    elif (L - Lporta <= x <= L) and (3*E + 2*Lporta <= y <= 3*E + 3*Lporta):
+        return kcob
+    elif (0 <= x <= Lporta) and (4*E + 3*Lporta <= y <= 4*E + 4*Lporta):
+        return kcob
+    elif (L - Lporta <= x <= L) and (4*E + 3*Lporta <= y <= 4*E + 4*Lporta):
+        return kcob
+    elif (E <= x <= E + Lporta) and (L - Lporta <= y <= L):
+        return kcob
+    elif (2*E + Lporta <= x <= 2*E + 2*Lporta) and (L - Lporta <= y <= L):
+        return kcob
+    elif (3*E + 2*Lporta <= x <= 3*E + 3*Lporta) and (L - Lporta <= y <= L):
+        return kcob
+    elif (4*E + 3*Lporta <= x <= 4*E + 4*Lporta) and (L - Lporta <= y <= L):
+        return kcob
+    else:
+        return ksil
+
+for i in range(n):
+    for j in range(n):
+        K[i, j] = portas(x[i], y[j], E, L, Lporta, ksil, kcob)  # Cond térmica nas portas
+
+
+             
+def chip(x, y, E, L, Lporta):
+        
+        if (E + Lporta/2 <= x <= 2*E + Lporta) and (E + Lporta/2 <= y <= 2*E + Lporta):
+            return 1
+        elif (L - 2*E - Lporta <= x <= L - E - Lporta/2) and (E + Lporta/2 <= y <= 2*E + Lporta):
+            return 2
+        elif (E + Lporta/2 <= x <= 2*E + Lporta) and (L - 2*E - Lporta <= y <= L - E - Lporta/2):
+            return 3
+        elif (L - 2*E - Lporta <= x <= L - E - Lporta/2) and (L - 2*E - Lporta <= y <= L - E - Lporta/2):
+            return 4
+        else:
+            return 5
+Tg = []
+for i in range(n):
+    for j in range(n):
+        group = chip(x[i], y[j], E, L, Lporta)
+        if group != 5:
+            Tg.append([i,j,group])
+        
+
+#loop para incremento nos nós internos de acordo com a equação geral
+K = K.flatten()
+
+
+Tg = np.array(Tg)
+ii = Tg[:,0]
+jj = Tg[:,1]
+gij = Tg[:,2]
+ijind = np.array([ii,jj])
+globalind = np.ravel_multi_index(ijind, (n,n))
+
+
+for ii in range(n): 
+    for jj in range(n): 
+       gp = T[ii,jj]    #condição geral da temperatura na malha
+#loop da Equação do Grupo 1
+       if ((ii == 0) and ((jj >= 1) and (jj <= n-2))): 
+           pass 
+           print('Grupo 1')    
+           up = T[ii,jj+1] 
+           down = T[ii,jj-1] 
+           right = T[ii+1,jj] 
+           A[gp,right] = 1*(-K[ii])
+           A[gp,gp] = -3*(-K[ii])
+           A[gp,up] = 1*(-K[ii]) 
+           A[gp,down] = 1*(-K[ii])
+#loop da Equação do Grupo 2
+       elif ((ii == n-1) and ((jj >= 1) and (jj <= n-2))): 
+           print('Grupo 2') 
+           up = T[ii,jj+1] 
+           down = T[ii,jj-1] 
+           left = T[ii-1,jj] 
+           A[gp,up] = 1*(-K[ii]) 
+           A[gp,left] = 1*(-K[ii])
+           A[gp,gp] = -3*(-K[ii]) 
+           A[gp,down] = 1*(-K[ii]) 
+#loop da Equação do Grupo 3
+       elif ((jj == 0) and ((ii >= 1) and (ii <= n-2))): 
+           print('Grupo 3')  
+           up = T[ii,jj+1] 
+           right = T[ii+1,jj] 
+           left = T[ii-1,jj] 
+           A[gp,up] = 1*(-K[ii])
+           A[gp,gp] = -3*(-K[ii]) 
+           A[gp,left] = 1*(-K[ii])
+           A[gp,right] = 1*(-K[ii])  
+#loop da Equação do Grupo 4
+       elif ((jj == n-1) and ((ii >= 1) and (ii <= n-2))): 
+           print('Grupo 4')  
+           down = T[ii,jj-1] 
+           right = T[ii+1,jj] 
+           left = T[ii-1,jj] 
+           A[gp,right] = 1*(-K[ii])
+           A[gp,down] = 1*(-K[ii])
+           A[gp,gp] = -3*(-K[ii]) 
+           A[gp,left] = 1*(-K[ii]) 
+#loop da Equação do Grupo 5
+       elif ii == 0 and jj ==0: 
+           print('Grupo 5') 
+           up = T[ii,jj+1] 
+           left = T[ii-1,jj] 
+           A[gp,gp] = -2*(-K[ii]) 
+           A[gp,up] = 1*(-K[ii])   
+           A[gp,left] = 1*(-K[ii])   
+#loop da Equação do Grupo 6
+       elif ii == 0 and jj ==n-1: 
+           print('Grupo 6') 
+           down = T[ii,jj-1] 
+           right = T[ii+1,jj] 
+           A[gp,down] = 1*(-K[ii]) 
+           A[gp,gp] = -2*(-K[ii]) 
+           A[gp,right] = 1*(-K[ii])
+#loop da Equação do Grupo 7
+       elif ii == n-1 and jj ==0: 
+           print('Grupo 7') 
+           up = T[ii,jj+1] 
+           left = T[ii-1,jj] 
+           A[gp,up] = 1*(-K[ii])
+           A[gp,gp] = -2*(-K[ii]) 
+           A[gp,left] = 1*(-K[ii]) 
+#loop da Equação do Grupo 8
+       elif ii == n-1 and jj ==n-1: 
+           print('Grupo 8') 
+           down = T[ii,jj-1] 
+           left = T[ii-1,jj] 
+           A[gp,down] = 1*(-K[ii]) 
+           A[gp,left] = 1*(-K[ii]) 
+           A[gp,gp] = -2*(-K[ii])
+#loop da Equação do Grupo 9
+       else: 
+           print('Grupo 9') 
+           up = T[ii,jj+1] 
+           down = T[ii,jj-1] 
+           right = T[ii+1,jj] 
+           left = T[ii-1,jj] 
+           A[gp,up] = 1*(-K[ii])
+           A[gp,down] = 1*(-K[ii]) 
+           A[gp,gp] = -4*(-K[ii])
+           A[gp,left] = 1*(-K[ii])
+           A[gp,right] = 1*(-K[ii])
+
+#loop para incremento nos nós internos do comportamento do calor emitido/sugado
+                                             
+ 
+ 
+for ii in range(n*n): 
+    for jj in range(1): 
+        B[ii,jj] = B[ii,jj] + (Q*(dx**2))    #calor emitido/sugado pela fonte ao longo do seu domínio
+
+
+for index in range (globalind.shape[0]):
+    localind = globalind[index]
+    localgij = gij[index]
+    if localgij == 1:
+        localtemp = T1
+    elif localgij == 2:
+        localtemp = T2
+    elif localgij == 3:
+        localtemp = T3
+    elif localgij == 4:
+        localtemp = T4
+    A[localind] = 0
+    A[localind,localind] = 1
+    B[localind] = localtemp
+
+#matriz de resultados
+ 
+ 
+C = np.linalg.solve(A,B) 
+
+ 
+plt.clf()    
+ 
+plt.figure(figsize=(10,10)) 
+ 
+ 
+ 
+plt.xticks(size=14, 
+             color = "black") 
+plt.yticks(size=14,  
+              color = "black") 
+ 
+plt.imshow(C.reshape((n,n)),interpolation='none',cmap=plt.cm.jet,origin='lower')   
+plt.colorbar()
