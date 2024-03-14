@@ -1,0 +1,163 @@
+import numpy as np 
+import matplotlib.pyplot as plt 
+
+ 
+ 
+L = 0.01              #largura da superfície
+n = 100      #número de nós
+dx = L/n          #variação de comprimento
+dy = dx          #variação de largura
+k = 0.01          #condutividade térmica n do material
+q = 0              # calor emitido/sugado por uma fonte
+T1 = 1
+T2 = 2
+
+#condições iniciais
+ 
+ 
+x = np.linspace(dx/2, L-dx/2, n)     #espaço a ser estudado no eixo x
+y = np.linspace(dy/2, L-dy/2, n)     #espaço a ser estudado no eixo y
+ 
+ 
+Q = q/n                          #quantidade de calor nodal 
+
+ 
+ 
+A = np.zeros((n*n,n*n), dtype=float)         #matriz inicial A 
+B = np.zeros((n*n,1), dtype=float)            #matriz inicial B 
+T = np.arange(n*n).reshape((n,n))           #matriz inicial da temperatura
+
+#loop para incremento nos nós internos de acordo com a equação geral
+ 
+for ii in range(n): 
+    for jj in range(n): 
+       gp = T[ii,jj]    #condição geral da temperatura na malha
+#loop da Equação do Grupo 1
+       if ((ii == 0) and ((jj >= 1) and (jj <= n-2))): 
+           pass 
+           print('Grupo 1')    
+           up = T[ii,jj+1] 
+           down = T[ii,jj-1] 
+           right = T[ii+1,jj] 
+           A[gp,right] = 1 
+           A[gp,gp] = -3 
+           A[gp,up] = 1 
+           A[gp,down] = 1 
+#loop da Equação do Grupo 2
+       elif ((ii == n-1) and ((jj >= 1) and (jj <= n-2))): 
+           print('Grupo 2') 
+           up = T[ii,jj+1] 
+           down = T[ii,jj-1] 
+           left = T[ii-1,jj] 
+           A[gp,up] = 1 
+           A[gp,left] = 1 
+           A[gp,gp] = -3 
+           A[gp,down] = 1 
+#loop da Equação do Grupo 3
+       elif ((jj == 0) and ((ii >= 1) and (ii <= n-2))): 
+           print('Grupo 3')  
+           up = T[ii,jj+1] 
+           right = T[ii+1,jj] 
+           left = T[ii-1,jj] 
+           A[gp,up] = 1 
+           A[gp,gp] = -3 
+           A[gp,left] = 1 
+           A[gp,right] = 1  
+#loop da Equação do Grupo 4
+       elif ((jj == n-1) and ((ii >= 1) and (ii <= n-2))): 
+           print('Grupo 4')  
+           down = T[ii,jj-1] 
+           right = T[ii+1,jj] 
+           left = T[ii-1,jj] 
+           A[gp,right] = 1 
+           A[gp,down] = 1 
+           A[gp,gp] = -3 
+           A[gp,left] = 1 
+#loop da Equação do Grupo 5
+       elif ii == 0 and jj ==0: 
+           print('Grupo 5') 
+           up = T[ii,jj+1] 
+           left = T[ii-1,jj] 
+           A[gp,gp] = -2  
+           A[gp,up] = 1   
+           A[gp,left] = 1   
+#loop da Equação do Grupo 6
+       elif ii == 0 and jj ==n-1: 
+           print('Grupo 6') 
+           down = T[ii,jj-1] 
+           right = T[ii+1,jj] 
+           A[gp,down] = 1 
+           A[gp,gp] = -2 
+           A[gp,right] = 1 
+#loop da Equação do Grupo 7
+       elif ii == n-1 and jj ==0: 
+           print('Grupo 7') 
+           up = T[ii,jj+1] 
+           left = T[ii-1,jj] 
+           A[gp,up] = 1 
+           A[gp,gp] = -2 
+           A[gp,left] = 1 
+#loop da Equação do Grupo 8
+       elif ii == n-1 and jj ==n-1: 
+           print('Grupo 8') 
+           down = T[ii,jj-1] 
+           left = T[ii-1,jj] 
+           A[gp,down] = 1 
+           A[gp,left] = 1 
+           A[gp,gp] = -2 
+#loop da Equação do Grupo 9
+       else: 
+           print('Grupo 9') 
+           up = T[ii,jj+1] 
+           down = T[ii,jj-1] 
+           right = T[ii+1,jj] 
+           left = T[ii-1,jj] 
+           A[gp,up] = 1 
+           A[gp,down] = 1 
+           A[gp,gp] = -4 
+           A[gp,left] = 1 
+           A[gp,right] = 1 
+
+#loop para incremento nos nós internos do comportamento do calor emitido/sugado
+                                             
+ 
+ 
+for ii in range(n*n): 
+    for jj in range(1): 
+        B[ii,jj] = B[ii,jj] + (Q*(dx*dy)/k)    #calor emitido/sugado pela fonte ao longo do seu domínio
+
+#condições de contorno no nó (0,0)
+     
+     
+ 
+A[0]=0 
+A[0,0]=1 
+B[0]= T1
+
+#condições de contorno no nó (n-1,n-1)
+ 
+ 
+A[-1]=0 
+A[-1,-1]=1
+B[-1]= T2 
+
+#matriz de resultados
+
+ 
+C = np.linalg.solve(A,B) 
+
+#função de plotagem do gráfico apresentado
+
+plt.clf()    
+ 
+plt.figure(figsize=(10,10)) 
+ 
+ 
+ 
+plt.xticks(size=14, 
+             color = "black") 
+plt.yticks(size=14,  
+              color = "black") 
+ 
+plt.imshow(C.reshape((n,n)),interpolation='none',cmap=plt.cm.jet,origin='lower')   
+plt.colorbar()
