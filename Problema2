@@ -1,0 +1,57 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+#condições iniciais
+
+
+L = 1              #largura da superfície
+n = 30            #número de nós
+T1 = 10          #temperatura na fronteira 1
+T2 = 30          #temperatura na fronteira 2
+dx = L/n          #variação de comprimento
+k = 0.01          #condutividade térmica n do material
+q = 10        #calor hipotético emitido pela fonte (+-10 dependendo)
+
+
+
+
+
+x = np.linspace(L-dx/2, dx/2, n)        #espaço a ser estudado
+Q = q/n                                              #quantidade de calor por nó
+
+
+A = np.zeros((n,n), dtype=float)        #matriz inicial A
+B = np.zeros((n,1), dtype=float)        #matriz inicial B
+
+#condições de fronteira
+
+
+A[0,0] = 1              #condição de fronteira para T2 no nó exterior
+A[n-1,n-1] = 1        #condição de fronteira para T1 no nó exterior 
+
+B[0] = T2               #condição de fronteira de T2 interagindo no primeiro nó  
+B[n-1] = T1            #condição de fronteira de T1 interagindo no último nó
+
+#loop para incremento nos nós internos de acordo com a equação geral
+
+for i in range(1,n-1):
+    A[i,i-1] = 1
+    A[i,i] = -2
+    A[i,i+1] = 1
+    B[i] = B[i] + (Q*(dx**2)/k)    #calor emitido/sugado pela fonte ao longo do seu domínio
+
+#matriz de resultados
+
+
+C = np.linalg.solve(A,B)
+
+#função de plotagem do gráfico apresentado
+
+plt.clf()
+plt.figure(1)
+plt.plot(x,C)
+plt.axis([0, L, 0, 40])
+plt.xlabel('Distância (m)')
+plt.ylabel('Temperatura (°C)')
+
+plt.show()
